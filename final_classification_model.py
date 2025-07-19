@@ -1,7 +1,6 @@
 """
 BERT classification
 """
-
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -16,7 +15,7 @@ import numpy as np
 import yfinance as yf
 import os
 
-device = "cpu" # "cuda:0" if torch.cuda.is_available() else "cpu"
+device =  "cuda:0" if torch.cuda.is_available() else "cpu"
 MAX_LEN = 21
 N_SEGMENTS = 3
 EMBEDDING_DIM = 768
