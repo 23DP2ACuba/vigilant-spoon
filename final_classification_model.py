@@ -1,6 +1,7 @@
 """
 BERT classification
 """
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -15,7 +16,7 @@ import numpy as np
 import yfinance as yf
 import os
 
-device =  "cuda:0" if torch.cuda.is_available() else "cpu"
+device = "cuda:0" if torch.cuda.is_available() else "cpu"
 MAX_LEN = 21
 N_SEGMENTS = 3
 EMBEDDING_DIM = 768
@@ -33,7 +34,7 @@ def add_mlp_outputs(df, mlpensemble, scaler, pca):
 
     with torch.no_grad():
         inputs = torch.tensor(features, dtype=torch.float32).to(device)
-        _, softmax_output = mlpensemble(inputs) 
+        _, softmax_output = mlpensemble(inputs)
         softmax_output = softmax_output.cpu().numpy()
 
     df["MLP_Prob_Sell"] = softmax_output[:, 0]
@@ -62,7 +63,7 @@ class BERT(nn.Module):
     self.embedding = BERTEmbedding(feature_dim, max_len, embd_dim, dropout)
     self.encoder_layer = nn.TransformerEncoderLayer(embd_dim, attn_heads, embd_dim*4)
     self.encoder_block = nn.TransformerEncoder(self.encoder_layer, n_layers)
-    self.cls_head = nn.Linear(embd_dim, 2)
+    self.cls_head = nn.Linear(embd_dim, 3)
 
   def forward(self, x, attention_mask=None):
     x = self.embedding(x)
@@ -83,7 +84,7 @@ X = data[feature_cols].astype(np.float32).values
 y = data["Target"].map({-1: 0, 0: 1, 1: 2}).astype(np.int64).values
 
 data = add_mlp_outputs(data, mlpensemble, scaler, pca)
-
+data["Target"] = data["Target"].map({-1: 0, 0: 1, 1: 2}).astype(np.int64).values
 train_dataset, val_dataset = train_test_split(data, test_size=0.2, stratify=data["Target"], random_state=42)
 
 DATA_LEN = data.shape[1]
@@ -119,7 +120,7 @@ for epoch in range(EPOCHS):
     input_seq = batch[0].to(device)
     labels = batch[1].to(device)
 
-    attention_mask = (input_seq != 0).any(-1).int()  
+    attention_mask = (input_seq != 0).any(-1).int()
     y_pred = bert(input_seq, attention_mask)
     loss = criterion(y_pred, labels)
 
